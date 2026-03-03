@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# IDE (PyCharm / IntelliJ)
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
