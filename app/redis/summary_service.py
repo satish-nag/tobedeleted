@@ -3,27 +3,15 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Callable
+from typing import Any, Callable, Dict, Optional
 
 from cache_store import CacheStore
 from redis_client import RedisClient
 from redis_lock import RedisLock, LockNotAcquired
 
 
-@dataclass(frozen=True)
-class SummaryKeys:
-    status: str
-    summary: str
-    error: str
-
-
-def make_summary_keys(alert_id: str) -> SummaryKeys:
-    base = f"alert:{alert_id}:summary"
-    return SummaryKeys(
-        status=f"{base}:status",
-        summary=f"{base}:data",
-        error=f"{base}:error",
-    )
+def summary_cache_key(alert_id: str) -> str:
+    return f"alert:{alert_id}:summary"
 
 
 @dataclass
@@ -36,18 +24,43 @@ class AlertSummaryService:
     completed_ttl_s: int = 60 * 60
     error_ttl_s: int = 10 * 60
 
+    def _now_epoch(self) -> int:
+        return int(time.time())
+
     def _lock_name(self, alert_id: str) -> str:
         return f"alert:{alert_id}:summary:lock"
+
+    def _set_record(
+        self,
+        alert_id: str,
+        *,
+        status: str,
+        summary: Optional[Any] = None,
+        error: Optional[str] = None,
+        ttl_s: Optional[int] = None,
+    ) -> None:
+        self.cache.set_json(
+            summary_cache_key(alert_id),
+            {
+                "status": status,
+                "summary": summary,
+                "error": error,
+                "last_updated_epoch": self._now_epoch(),
+            },
+            ttl_s=ttl_s,
+        )
 
     def start_generation_if_needed(
         self,
         alert_id: str,
         generator_fn: Callable[[], Dict[str, Any]],
     ) -> bool:
-        keys = make_summary_keys(alert_id)
-
-        status = self.cache.get_json(keys.status)
-        if status and status.get("state") == "COMPLETED":
+        record = self.cache.get_json(summary_cache_key(alert_id))
+        if (
+            isinstance(record, dict)
+            and record.get("status") == "COMPLETED"
+            and record.get("summary") is not None
+        ):
             return False
 
         lock = RedisLock(
@@ -62,34 +75,21 @@ class AlertSummaryService:
             return False
 
         try:
-            self.cache.set_json(
-                keys.status,
-                {"state": "IN_PROGRESS", "updated_at_ms": int(time.time() * 1000)},
-                ttl_s=self.in_progress_ttl_s,
-            )
+            self._set_record(alert_id, status="IN_PROGRESS", ttl_s=self.in_progress_ttl_s)
 
             try:
                 summary = generator_fn()
             except Exception as e:
-                self.cache.set_json(
-                    keys.error,
-                    {"message": str(e), "updated_at_ms": int(time.time() * 1000)},
-                    ttl_s=self.error_ttl_s,
-                )
-                self.cache.set_json(
-                    keys.status,
-                    {"state": "ERROR", "updated_at_ms": int(time.time() * 1000)},
-                    ttl_s=self.error_ttl_s,
-                )
+                self._set_record(alert_id, status="ERROR", error=str(e), ttl_s=self.error_ttl_s)
                 return True
 
-            self.cache.set_json(keys.summary, summary, ttl_s=self.completed_ttl_s)
-            self.cache.set_json(
-                keys.status,
-                {"state": "COMPLETED", "updated_at_ms": int(time.time() * 1000)},
+            self._set_record(
+                alert_id,
+                status="COMPLETED",
+                summary=summary,
+                error=None,
                 ttl_s=self.completed_ttl_s,
             )
-            self.cache.delete(keys.error)
             return True
         finally:
             lock.release()
@@ -102,25 +102,28 @@ class AlertSummaryService:
         max_poll_interval_s: float = 1.5,
         backoff_factor: float = 1.35,
     ) -> Dict[str, Any]:
-        keys = make_summary_keys(alert_id)
         deadline = time.monotonic() + wait_timeout_s
         interval = poll_interval_s
 
         while True:
-            status = self.cache.get_json(keys.status)
+            record = self.cache.get_json(summary_cache_key(alert_id))
 
-            if status is not None:
-                state = status.get("state")
-                if state == "COMPLETED":
-                    summary = self.cache.get_json(keys.summary)
-                    if summary is not None:
-                        return {"state": "COMPLETED", "summary": summary}
-                elif state == "ERROR":
-                    err = self.cache.get_json(keys.error) or {"message": "Unknown error"}
-                    return {"state": "ERROR", "error": err}
+            if isinstance(record, dict):
+                status = record.get("status")
+                if status == "COMPLETED" and record.get("summary") is not None:
+                    return record
+                if status == "ERROR":
+                    if not record.get("error"):
+                        record["error"] = "Unknown error"
+                    return record
 
             if time.monotonic() >= deadline:
-                return {"state": "TIMEOUT", "error": {"message": "Timed out waiting for summary"}}
+                return {
+                    "status": "TIMEOUT",
+                    "summary": None,
+                    "error": "Timed out waiting for summary",
+                    "last_updated_epoch": self._now_epoch(),
+                }
 
             time.sleep(interval)
             interval = min(max_poll_interval_s, interval * backoff_factor)
