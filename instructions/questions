@@ -1,0 +1,8 @@
+Read this requirements document and propose 3 production-grade designs.
+Compare them on reliability, multi-pod support, duplicate event handling, delayed processing, and stale cache prevention.
+Then recommend the best design and explain why.
+
+
+Now use the recommended design and this implementation instruction document.
+Generate the Spring Boot project skeleton in phases, starting with package structure, key classes, configuration, and orchestration flow.
+Do not jump to full code yet.
