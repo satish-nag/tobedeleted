@@ -1,0 +1,19 @@
+Help me in generating prompt in a markdown file for one of my requirement
+
+language: python
+framework: fast api framework and many other python libs
+
+JWT implementation:
+1. i have to implement a jwt token implementation
+2. add a place holder in the file, i will add the details about the endpoints, how to fetch the other details
+3. we have to cache the token in each pod's memory, and keep track of the expiry time, and refresh the cache when time is less than 10% of the total time
+4. when refreshing the token should be done asyncronously and replace the token in the cache, idea is to replace the token before expiry and at the same time donot block the threads processing to refresh the token so we are doing before 10% of time is left
+
+Structured Logging with JSON input
+1. currently we have text based output logging with tracing implementation
+2. i need to implement json based structured logging
+3. need to implement without making much changes to existing code except logging related code
+4. use decorators if possible for logging as it is a cross-cutting concern
+5. add timing as a key in the json for various calls such as each api call time taken, time taken for redis actions, db calls, api calls, llm calls etc
+6. add any of the relavant parameters as a json key such as cwiId/alert ID or other important paramerters
+7. make all the effort to not modify much of the existing logging information 
