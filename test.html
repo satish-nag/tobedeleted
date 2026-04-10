@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FBA Alert Summary Widget</title>
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #fbfbfd;
+      --border: #d6dde8;
+      --muted: #5f6f82;
+      --text: #1d2733;
+      --title-blue: #0f7bc7;
+      --title-blue-dark: #0a5f9c;
+      --hero-top: #0f7dbf;
+      --hero-bottom: #0b5f96;
+      --hero-outline: rgba(255,255,255,0.18);
+      --hero-inner: rgba(255,255,255,0.08);
+      --panel-header: #eef2f6;
+      --section-bg: #ffffff;
+      --high: #d92d20;
+      --high-bg: #fff1f1;
+      --medium: #b54708;
+      --medium-bg: #fff7ed;
+      --low: #026aa2;
+      --low-bg: #eef8ff;
+      --info: #475467;
+      --info-bg: #f4f6f8;
+      --good: #027a48;
+      --good-bg: #ecfdf3;
+      --shadow: 0 16px 40px rgba(0,0,0,0.22);
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 12px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #172132 0%, #0f1724 55%, #0b1220 100%);
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .widget-shell {
+      width: min(860px, 100%);
+      margin: 0 auto;
+    }
+
+    .widget-label {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 12px 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.96;
+    }
+
+    .widget-label .caret {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      font-size: 12px;
+    }
+
+    .summary-card {
+      background: var(--card);
+      border: 1px solid rgba(214,221,232,0.5);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, var(--hero-top) 0%, var(--hero-bottom) 100%);
+      border-radius: 16px;
+      color: #fff;
+      border: 1px solid var(--hero-outline);
+      box-shadow: inset 0 0 0 1px var(--hero-inner);
+      padding: 18px 20px 16px;
+      margin-bottom: 14px;
+    }
+
+    .hero-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .hero-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .hero-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      color: #29b3ff;
+      letter-spacing: 0.2px;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: #f6fbff;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .disclaimer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.95);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .hero-summary {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #f4fbff;
+    }
+
+    .panel {
+      background: var(--section-bg);
+      border: 1px solid #e4e8ef;
+      border-radius: 12px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .panel summary {
+      list-style: none;
+      cursor: pointer;
+      background: linear-gradient(180deg, #f6f7f9 0%, #edf1f4 100%);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--title-blue);
+      font-size: 16px;
+      font-weight: 800;
+      user-select: none;
+    }
+
+    .panel summary::-webkit-details-marker { display: none; }
+
+    .panel-title-icon {
+      width: 22px;
+      text-align: center;
+      flex: 0 0 22px;
+    }
+
+    .caret-inline {
+      transition: transform 0.2s ease;
+      color: #267fc6;
+      font-size: 13px;
+      margin-right: 4px;
+    }
+
+    details[open] > summary .caret-inline {
+      transform: rotate(90deg);
+    }
+
+    .panel-body {
+      padding: 14px 16px 16px;
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .signal-item {
+      border-radius: 12px;
+      border-left: 4px solid;
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .signal-item.high { background: var(--high-bg); border-left-color: var(--high); }
+    .signal-item.medium { background: var(--medium-bg); border-left-color: var(--medium); }
+    .signal-item.low { background: var(--low-bg); border-left-color: var(--low); }
+    .signal-item.info { background: var(--info-bg); border-left-color: var(--info); }
+
+    .signal-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .severity-badge {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .signal-item.high .severity-badge { background: rgba(217,45,32,0.12); color: var(--high); }
+    .signal-item.medium .severity-badge { background: rgba(181,71,8,0.14); color: var(--medium); }
+    .signal-item.low .severity-badge { background: rgba(2,106,162,0.12); color: var(--low); }
+    .signal-item.info .severity-badge { background: rgba(71,84,103,0.1); color: var(--info); }
+
+    .signal-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: #18232f;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .signal-line {
+      font-size: 13px;
+      color: #3d4b59;
+      line-height: 1.45;
+    }
+
+    .signal-line strong {
+      color: #223040;
+    }
+
+    .timeline-wrap {
+      background: #f8fbff;
+      border: 1px solid #dce8f7;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .timeline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .event-chip, .gap-chip {
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .event-chip {
+      background: #ffffff;
+      border: 1px solid #cfddf0;
+      color: var(--title-blue-dark);
+    }
+
+    .gap-chip {
+      background: #e9f4ff;
+      border: 1px dashed #8ab9ec;
+      color: var(--title-blue-dark);
+    }
+
+    .timeline-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .timeline-stat {
+      background: #fff;
+      border: 1px solid #dde6f1;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #344556;
+    }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .fact-box {
+      background: #fafcff;
+      border: 1px solid #e1e8f1;
+      border-radius: 12px;
+      padding: 11px 12px;
+      min-height: 82px;
+    }
+
+    .fact-k {
+      font-size: 11px;
+      font-weight: 800;
+      color: #6b7b8c;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .fact-v {
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #1d2939;
+    }
+
+    .fact-v.good { color: var(--good); }
+    .fact-v.warn { color: var(--medium); }
+
+    .fact-note {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #66778a;
+      line-height: 1.35;
+    }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kv-card {
+      border: 1px solid #e3e9f2;
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 10px 12px;
+    }
+
+    .kv-k {
+      font-size: 11px;
+      font-weight: 800;
+      color: #6b7b8c;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.35px;
+    }
+
+    .kv-v {
+      font-size: 13px;
+      color: #243241;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .rule-card {
+      border-left: 4px solid #2b7de9;
+      border-radius: 12px;
+      background: #f7fbff;
+      border-top: 1px solid #d8e6fa;
+      border-right: 1px solid #d8e6fa;
+      border-bottom: 1px solid #d8e6fa;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .rule-card:last-child { margin-bottom: 0; }
+
+    .rule-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #173b69;
+      margin-bottom: 6px;
+    }
+
+    .rule-meta {
+      font-size: 13px;
+      color: #4d6073;
+      line-height: 1.45;
+    }
+
+    .footer {
+      padding-top: 12px;
+      text-align: center;
+      color: #8b96a5;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 780px) {
+      body { padding: 14px; }
+      .summary-card { padding: 14px; }
+      .hero { padding: 14px; }
+      .hero-title { font-size: 18px; }
+      .facts-grid, .kv-grid { grid-template-columns: 1fr; }
+      .hero-top-row { flex-direction: column; }
+      .hero-meta { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget-shell">
+    <div class="widget-label"><span class="caret">⌄</span> Alert Summary Display</div>
+
+    <div class="summary-card" id="app"></div>
+  </div>
+
+  <script>
+    const alertData = {
+      header: {
+        widgetTitle: "FBA Alert Summary",
+        workItemId: "WI_0369015583",
+        timestamp: "2026-04-10T07:06:29",
+        disclaimer: "The following content is AI-generated. Please review for accuracy.",
+        summary: "3 TWIs with a total amount of 30.0 USD were identified. No previous fraud history exists. Transactions occurred in rapid succession, all from the same device and IP, with no location mismatches. Profile changes and recent payee additions were noted."
+      },
+      signals: {
+        summary: "Top signals are shown first so the analyst can triage quickly before expanding supporting facts.",
+        items: [
+          {
+            severity: "HIGH",
+            title: "Rapid sequence of events",
+            evidence: "3 TWIs occurred within 37 seconds.",
+            why_it_matters: "Compressed multi-event activity can indicate suspicious workflow or fast setup-to-payment behavior."
+          },
+          {
+            severity: "MEDIUM",
+            title: "Recent payee/profile-related activity",
+            evidence: "Payee add/update and profile-related trigger present in the same CWI.",
+            why_it_matters: "Recent setup activity before payment can increase risk and warrants closer review."
+          },
+          {
+            severity: "MEDIUM",
+            title: "Triggered rule indicates suspicious combination",
+            evidence: "Rule triggered: ZRI_Payee Token Status_Days since profile update.",
+            why_it_matters: "Existing fraud controls already detected a risk pattern tied to recent customer activity."
+          }
+        ]
+      },
+      eventPattern: {
+        sequence: [
+          { type: "event", label: "Profile Change" },
+          { type: "gap", label: "2s" },
+          { type: "event", label: "Payee Update" },
+          { type: "gap", label: "35s" },
+          { type: "event", label: "Payment" }
+        ],
+        totalSpan: "37s",
+        intervals: ["0h:00m:02s", "0h:00m:35s"],
+        businessUnit: "Retail"
+      },
+      quickFacts: [
+        { label: "TWI Count", value: "3", note: "Consolidated alerts in this CWI" },
+        { label: "Total Amount", value: "$30.00", note: "Latest-version TWI totals" },
+        { label: "Prior Fraud", value: "No", tone: "good", note: "No confirmed fraud in last 5 years" },
+        { label: "Rule Count", value: "1", note: "Triggered control(s) detected" },
+        { label: "Geo Mismatch", value: "No", tone: "good", note: "IP aligned with customer location" },
+        { label: "Same Device/IP", value: "Yes", tone: "warn", note: "Events came from same observed device" }
+      ],
+      sections: {
+        riskSummary: {
+          riskInsight: "No prior fraud history, but short transaction intervals and triggered rules indicate potential risk.",
+          twis: 3,
+          totalAmount: "30.0 USD",
+          lastAlert: "N/A",
+          status: "N/A",
+          alertIntervals: ["0h:00m:02s", "0h:00m:35s"],
+          timeSpan: "0h:00m:37s",
+          fraudPattern: "No Previous Fraud",
+          triggeredRules: [
+            {
+              name: "ZRI_Payee Token Status_Days since profile update",
+              step: "Retail Ready",
+              twis: 2,
+              response: "Delay",
+              action: "Review"
+            }
+          ]
+        },
+        transactionSummary: {
+          facts: [
+            { key: "Payment Type", value: "Instant" },
+            { key: "Payee Added/Updated", value: "Recent payee add/update identified" },
+            { key: "Memo(s)", value: "Sample memo values can be displayed here" },
+            { key: "Transaction Versions", value: "Latest versions only considered for signal generation" }
+          ]
+        },
+        relationshipSummary: {
+          facts: [
+            { key: "Party Type", value: "Consumer" },
+            { key: "Party Established", value: "2018-03-14" },
+            { key: "DDA Age", value: "6 years" },
+            { key: "Recent Changes", value: "Phone / email / address changes within last 30 days can be listed here" }
+          ]
+        },
+        deviceSummary: {
+          facts: [
+            { key: "Device Age", value: "Known device age from iovation" },
+            { key: "LPIDs on Device", value: "4" },
+            { key: "IP Distance", value: "No mismatch identified" },
+            { key: "Iovation Indicators", value: "Indicator names, scores, and reason text can be rendered here" }
+          ]
+        },
+        historicalFacts: {
+          facts: [
+            { key: "Prior Fraud", value: "No confirmed fraud in last 5 years" },
+            { key: "Last Alert", value: "N/A" }
+          ]
+        }
+      }
+    };
+
+    const iconMap = {
+      riskSummary: "📊",
+      transactionSummary: "💳",
+      relationshipSummary: "👤",
+      deviceSummary: "📱",
+      historicalFacts: "🕘"
+    };
+
+    function severityClass(severity) {
+      const s = (severity || "").toLowerCase();
+      if (s === "high") return "high";
+      if (s === "medium") return "medium";
+      if (s === "low") return "low";
+      return "info";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderSignals(signals) {
+      if (!signals?.items?.length) {
+        return `<div class="signal-item info"><div class="signal-name">No signals available</div></div>`;
+      }
+      return signals.items.map(item => `
+        <div class="signal-item ${severityClass(item.severity)}">
+          <div class="signal-top">
+            <div class="signal-name">${escapeHtml(item.title)}</div>
+            <div class="severity-badge">${escapeHtml(item.severity || 'INFO')}</div>
+          </div>
+          <div class="signal-line"><strong>Evidence:</strong> ${escapeHtml(item.evidence || 'N/A')}</div>
+          <div class="signal-line"><strong>Why it matters:</strong> ${escapeHtml(item.why_it_matters || 'N/A')}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTimeline(pattern) {
+      const sequence = (pattern?.sequence || []).map(item => {
+        const cls = item.type === 'gap' ? 'gap-chip' : 'event-chip';
+        return `<span class="${cls}">${escapeHtml(item.label)}</span>`;
+      }).join('');
+
+      const stats = [
+        pattern?.totalSpan ? `<span class="timeline-stat"><strong>Total span:</strong> ${escapeHtml(pattern.totalSpan)}</span>` : '',
+        pattern?.intervals?.length ? `<span class="timeline-stat"><strong>Alert intervals:</strong> ${escapeHtml(pattern.intervals.join(', '))}</span>` : '',
+        pattern?.businessUnit ? `<span class="timeline-stat"><strong>Business unit:</strong> ${escapeHtml(pattern.businessUnit)}</span>` : ''
+      ].filter(Boolean).join('');
+
+      return `
+        <div class="timeline-wrap">
+          <div class="timeline">${sequence}</div>
+          <div class="timeline-meta">${stats}</div>
+        </div>
+      `;
+    }
+
+    function renderQuickFacts(facts) {
+      return (facts || []).map(fact => `
+        <div class="fact-box">
+          <div class="fact-k">${escapeHtml(fact.label)}</div>
+          <div class="fact-v ${escapeHtml(fact.tone || '')}">${escapeHtml(fact.value)}</div>
+          <div class="fact-note">${escapeHtml(fact.note || '')}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderFactGrid(items) {
+      return `
+        <div class="kv-grid">
+          ${(items || []).map(item => `
+            <div class="kv-card">
+              <div class="kv-k">${escapeHtml(item.key)}</div>
+              <div class="kv-v">${escapeHtml(item.value)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderRiskSummary(section) {
+      const rules = (section?.triggeredRules || []).map(rule => `
+        <div class="rule-card">
+          <div class="rule-name">${escapeHtml(rule.name)}</div>
+          <div class="rule-meta">
+            Step: ${escapeHtml(rule.step || 'N/A')} | TWIs: ${escapeHtml(rule.twis || 'N/A')} | Response: ${escapeHtml(rule.response || 'N/A')} | Action: ${escapeHtml(rule.action || 'N/A')}
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div class="kv-grid" style="margin-bottom: 12px;">
+          <div class="kv-card"><div class="kv-k">Risk Insight</div><div class="kv-v">${escapeHtml(section?.riskInsight || 'N/A')}</div></div>
+          <div class="kv-card"><div class="kv-k">Fraud Pattern</div><div class="kv-v">${escapeHtml(section?.fraudPattern || 'N/A')}</div></div>
+          <div class="kv-card"><div class="kv-k">TWIs / Total Amount</div><div class="kv-v">${escapeHtml(String(section?.twis ?? 'N/A'))} | ${escapeHtml(section?.totalAmount || 'N/A')}</div></div>
+          <div class="kv-card"><div class="kv-k">Last Alert / Status</div><div class="kv-v">${escapeHtml(section?.lastAlert || 'N/A')} | ${escapeHtml(section?.status || 'N/A')}</div></div>
+          <div class="kv-card"><div class="kv-k">Alert Intervals</div><div class="kv-v">${escapeHtml((section?.alertIntervals || []).join(', ') || 'N/A')}</div></div>
+          <div class="kv-card"><div class="kv-k">Time Span</div><div class="kv-v">${escapeHtml(section?.timeSpan || 'N/A')}</div></div>
+        </div>
+        ${rules ? `<div>${rules}</div>` : ''}
+      `;
+    }
+
+    function sectionTemplate(key, title, open, bodyHtml) {
+      return `
+        <details class="panel" ${open ? 'open' : ''}>
+          <summary>
+            <span class="caret-inline">▶</span>
+            <span class="panel-title-icon">${iconMap[key] || '•'}</span>
+            <span>${escapeHtml(title)}</span>
+          </summary>
+          <div class="panel-body">${bodyHtml}</div>
+        </details>
+      `;
+    }
+
+    function renderApp(data) {
+      const root = document.getElementById('app');
+      root.innerHTML = `
+        <div class="hero">
+          <div class="hero-top-row">
+            <div class="hero-title-wrap">
+              <div class="hero-icon">⚠️</div>
+              <h1 class="hero-title">${escapeHtml(data.header.widgetTitle)}</h1>
+            </div>
+            <div class="hero-meta">
+              <span class="chip">${escapeHtml(data.header.workItemId)}</span>
+              <span class="chip">${escapeHtml(data.eventPattern?.businessUnit || '')}</span>
+              <span class="chip">${escapeHtml(String(data.sections?.riskSummary?.twis ?? ''))} TWI(s)</span>
+              <span class="chip">${escapeHtml(data.sections?.riskSummary?.totalAmount || '')}</span>
+              <span class="chip">${escapeHtml(data.header.timestamp)}</span>
+            </div>
+          </div>
+          <div class="disclaimer">✨ <span>${escapeHtml(data.header.disclaimer)}</span></div>
+          <p class="hero-summary">${escapeHtml(data.header.summary)}</p>
+        </div>
+
+        ${sectionTemplate('riskSummary', 'Top Risk Signals', true, renderSignals(data.signals) + `<div style="height:12px"></div>` + renderTimeline(data.eventPattern))}
+        ${sectionTemplate('riskSummary', 'Risk Summary', true, renderRiskSummary(data.sections.riskSummary))}
+        ${sectionTemplate('transactionSummary', 'Transaction Summary', false, renderFactGrid(data.sections.transactionSummary.facts))}
+        ${sectionTemplate('relationshipSummary', 'Relationship Summary', false, renderFactGrid(data.sections.relationshipSummary.facts))}
+        ${sectionTemplate('deviceSummary', 'Device Summary', false, renderFactGrid(data.sections.deviceSummary.facts))}
+        ${sectionTemplate('historicalFacts', 'Quick Facts', false, `<div class="facts-grid">${renderQuickFacts(data.quickFacts)}</div>`)}
+
+        <div class="footer">CONFIDENTIAL · Internal Fraud Operations Review Only</div>
+      `;
+    }
+
+    renderApp(alertData);
+
+    /*
+      Expected JSON shape from your backend:
+
+      {
+        header: {
+          widgetTitle,
+          workItemId,
+          timestamp,
+          disclaimer,
+          summary
+        },
+        signals: {
+          items: [
+            { severity, title, evidence, why_it_matters }
+          ]
+        },
+        eventPattern: {
+          sequence: [{ type: 'event'|'gap', label }],
+          totalSpan,
+          intervals,
+          businessUnit
+        },
+        quickFacts: [{ label, value, note, tone }],
+        sections: {
+          riskSummary: {...},
+          transactionSummary: { facts: [{ key, value }] },
+          relationshipSummary: { facts: [{ key, value }] },
+          deviceSummary: { facts: [{ key, value }] },
+          historicalFacts: { facts: [{ key, value }] }
+        }
+      }
+
+      Replace `alertData` with your parsed API response, for example:
+      const alertData = JSON.parse(apiResponse);
+      renderApp(alertData);
+    */
+  </script>
+</body>
+</html>
