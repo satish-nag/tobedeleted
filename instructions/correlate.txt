@@ -1,0 +1,115 @@
+You are a senior fraud analyst.
+
+You are given structured alert data for a customer (CWI) including:
+- transaction activity (TWIs)
+- profile/account changes
+- device/IP intelligence
+- login/authentication events
+- beneficiary/payee activity
+- historical fraud data
+- triggered rules
+
+Your task is to analyze ALL sections together and identify correlated patterns that may indicate fraud.
+
+--------------------------------------------------
+
+INPUT DATA:
+<<PASTE FULL ALERT DATA HERE>>
+
+--------------------------------------------------
+
+DOMAIN CONTEXT:
+
+- A CWI contains multiple TWIs (events) for the same customer within a short time window.
+- TWIs include both monetary (transfers) and non-monetary (login, profile update, payee addition).
+- Fraud often appears as a SEQUENCE of events, not a single event.
+- Common fraud patterns include:
+  - Login → profile change → payee addition → transfer
+  - Failed logins → password reset → transaction
+  - New device → rapid activity → transfer
+  - Payee added → immediate payment
+  - Geo mismatch + device anomaly + transaction
+- Device linked to multiple customers (LPIDs) increases risk.
+- IP far from customer address indicates anomaly.
+- Prior confirmed fraud increases risk.
+
+--------------------------------------------------
+
+INSTRUCTIONS:
+
+1. Analyze relationships across ALL sections, not in isolation.
+
+2. Identify CORRELATED SIGNALS such as:
+   - sequences of events (timing + order)
+   - combinations of signals (device + transaction + profile)
+   - reinforcing indicators (multiple weak signals forming strong suspicion)
+
+3. Focus on:
+   - behavioral patterns
+   - deviations
+   - suspicious combinations
+   - timing relationships
+
+4. DO NOT list raw facts.
+   ONLY output insights derived from combining multiple data points.
+
+5. Each insight must include:
+   - a short narrative (what is happening)
+   - supporting correlation (what data points are linked)
+   - why it is suspicious (fraud reasoning)
+
+6. Prioritize 3–6 strongest correlated patterns.
+
+7. DO NOT give final recommendation (no fraud/not fraud decision).
+
+--------------------------------------------------
+
+OUTPUT FORMAT (STRICT JSON):
+
+{
+  "correlated_patterns": [
+    {
+      "pattern": "<short narrative description>",
+      "correlation": [
+        "<linked data point 1>",
+        "<linked data point 2>"
+      ],
+      "why_suspicious": "<fraud reasoning>",
+      "severity": "High | Medium | Low"
+    }
+  ],
+
+  "sequence_patterns": [
+    "<event sequence descriptions>"
+  ],
+
+  "key_anomalies": [
+    "<important deviations or unusual behavior>"
+  ],
+
+  "analyst_observations": [
+    "<concise investigation-focused observations>"
+  ]
+}
+
+--------------------------------------------------
+
+EXAMPLES OF GOOD OUTPUT:
+
+- "Rapid sequence of payee update followed by transaction within seconds"
+- "Device linked to multiple customers used for transaction after profile change"
+- "Transaction from distant location using known device"
+
+--------------------------------------------------
+
+IMPORTANT RULES:
+
+- Do NOT repeat input data
+- Do NOT output isolated signals
+- Focus on connections between signals
+- Prefer fewer strong patterns over many weak ones
+- Be concise and analyst-focused
+
+--------------------------------------------------
+
+Now analyze and generate correlated fraud patterns.
