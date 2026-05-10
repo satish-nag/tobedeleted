@@ -7,6 +7,7 @@ Fraud signals must be evaluated using:
 - transaction materiality
 - reinforcing evidence
 - customer context
+- mitigating behavior
 
 Do NOT treat all signals equally.
 
@@ -14,9 +15,9 @@ Do NOT treat all signals equally.
 
 SIGNAL STRENGTH PRINCIPLES:
 
-1. Weak standalone signals should remain LOW severity.
+Weak standalone signals should remain LOW severity unless reinforced by additional suspicious behavior.
 
-Examples:
+Examples of weak standalone signals:
 - old profile changes
 - low-dollar payments
 - known device usage
@@ -24,127 +25,186 @@ Examples:
 - isolated rule triggers
 - single failed login
 - established payee usage
+- historical profile updates
+- historical payee activity
 
 These do NOT independently indicate fraud.
 
 --------------------------------------------------
 
-2. Multiple weak signals may become MEDIUM/HIGH only when strongly correlated.
+CORRELATED SIGNAL PRINCIPLES:
+
+Multiple weak signals may become MEDIUM or HIGH severity ONLY when strongly correlated together.
 
 Examples:
 - profile update + new device + rapid payment
 - failed login + password reset + payee add
-- geo mismatch + shared device + instant payment
+- geo mismatch + risky device + instant payment
+- shared device + multiple LPIDs + rapid transfer activity
+- payee update + real-time payment + unusual transaction amount
+
+Fraud signals are strongest when:
+- events occur close together
+- multiple sections reinforce each other
+- activity shows suspicious progression or escalation
 
 --------------------------------------------------
 
-3. Transaction amount/materiality affects severity.
+TEMPORAL VALIDATION RULES:
 
-Small-dollar transactions:
-- may indicate testing/probing behavior
-- should usually remain LOW or MEDIUM severity
-- unless reinforced by multiple strong anomalies
+A signal must be recent and behaviorally relevant.
 
-High-dollar or unusual transactions:
+Profile changes:
+- Phone/email/address changes are suspicious ONLY if within 30 days of CURRENT_DATETIME or close to current CWI activity.
+- Older profile changes are historical context only.
+- Do NOT describe old profile changes as account takeover indicators.
+- Do NOT correlate old profile changes with current payments unless directly reinforced by recent suspicious activity.
+
+Payee activity:
+- Payee add/update is suspicious ONLY if recent or close to payment timing.
+- Old payee updates should not generate risk signals.
+
+Device activity:
+- New-device risk applies ONLY if device age is recent or iovation indicators show elevated risk.
+- Known/old devices reduce suspicion unless other strong anomalies exist.
+
+Sequence timing:
+- Sequence-based fraud patterns require meaningful timing proximity.
+- Events separated by long durations should not be treated as suspicious sequences unless explicitly linked.
+
+--------------------------------------------------
+
+TRANSACTION MATERIALITY RULES:
+
+Transaction amount affects severity.
+
+Low-dollar transactions:
+- may indicate probing/testing behavior
+- usually remain LOW or MEDIUM severity
+- should not independently produce HIGH severity
+
+Moderate/high-dollar transactions:
 - increase severity significantly
-- especially with profile/device/payee anomalies
+- especially when combined with:
+  - profile changes
+  - new payees
+  - risky devices
+  - geo mismatches
+  - rapid activity
 
 Examples:
-- $10 after profile change -> LOW/MEDIUM
-- $5000 instant payment after profile change from new device -> HIGH
+- $10 payment after profile update -> LOW/MEDIUM
+- $5000 instant payment after profile update from risky device -> HIGH
 
 --------------------------------------------------
 
-4. Known/trusted behavior reduces severity.
+PAYMENT SPEED RULES:
+
+Real-time or irreversible payment methods increase severity.
+
+Examples:
+- instant payments
+- prepaid transfers
+- card-to-card transfers
+- rapid ACH/wire activity
+
+Especially when combined with:
+- new payee activity
+- authentication anomalies
+- profile changes
+- device/IP anomalies
+
+--------------------------------------------------
+
+MITIGATING FACTORS:
 
 Reduce severity when:
 - device is historically known
 - IP/location matches customer profile
 - payee is established
-- no prior fraud exists
+- no recent profile changes exist
 - no authentication anomalies exist
+- no prior fraud exists
+- account tenure is long
 - customer behavior matches historical patterns
+- transaction amount is low and behaviorally normal
+
+Mitigating factors should reduce exaggerated fraud narratives.
 
 --------------------------------------------------
 
-5. Recency matters.
+PRIOR FRAUD RULES:
 
-Recent suspicious behavior:
-- increases severity
-
-Old historical behavior:
-- should not increase severity alone
-
---------------------------------------------------
-
-6. Sequence compression increases severity.
-
-Examples:
-- login -> payee add -> transfer within minutes
-- multiple TWIs in seconds/minutes
-- rapid retries/rejections
-
---------------------------------------------------
-
-7. Real-time or irreversible payment methods increase severity.
-
-Examples:
-- instant payment
-- real-time transfer
-- prepaid movement
-- card-to-card transfer
-
-Especially when combined with:
-- new payee
-- profile changes
-- risky device
-- geo mismatch
-
---------------------------------------------------
-
-8. Prior confirmed fraud increases severity only when behavior is behaviorally related.
+Prior confirmed fraud may increase severity ONLY when:
+- current behavior is behaviorally related
+OR
+- current activity shows reinforcing suspicious behavior
 
 Do NOT automatically elevate severity solely because prior fraud exists.
 
 --------------------------------------------------
 
-9. Generate HIGH severity only when:
-- multiple strong indicators correlate
-OR
-- severe behavioral anomaly exists
+SEVERITY ASSIGNMENT GUIDELINES:
 
---------------------------------------------------
-
-10. Avoid exaggerated fraud narratives.
-
-Do NOT:
-- overstate weak signals
-- assume account takeover without sufficient evidence
-- generate HIGH severity from isolated anomalies
-- describe normal behavior as suspicious
-
---------------------------------------------------
-
-SEVERITY GUIDELINES:
-
-HIGH:
+HIGH severity:
 - strong multi-signal correlation
-- rapid suspicious sequence
-- high materiality
-- risky device/IP behavior
-- account takeover patterns
-- mule behavior indicators
-- real-time movement with reinforcing anomalies
+- suspicious behavioral sequence
+- account takeover indicators
+- risky/shared device activity
+- significant geo anomalies
+- rapid real-time money movement
+- high materiality transactions
+- multiple reinforcing anomalies
 
-MEDIUM:
+MEDIUM severity:
 - moderate anomaly
 - partial suspicious sequence
-- moderate materiality
 - suspicious but incomplete evidence
+- moderate materiality
+- some reinforcing indicators
 
-LOW:
+LOW severity:
 - weak anomaly
-- informational pattern
+- informational observation
 - low materiality
 - limited supporting evidence
 - insufficient correlation
+- historical/stale contextual behavior
+
+--------------------------------------------------
+
+SIGNAL QUALITY RULES:
+
+Before generating each signal, silently validate:
+
+1. Is the behavior recent enough?
+2. Is the activity behaviorally suspicious?
+3. Is there meaningful correlation?
+4. Does the severity match the strength of evidence?
+5. Are mitigating factors reducing suspicion?
+
+If evidence is weak or incomplete:
+- reduce severity
+- avoid exaggerated fraud narratives
+- avoid definitive account takeover language
+
+--------------------------------------------------
+
+IMPORTANT:
+
+A field being present does NOT automatically make it risky.
+
+Only generate fraud signals when:
+- timing
+- correlation
+- severity
+- behavioral relevance
+- materiality
+
+collectively justify the signal.
+
+Avoid:
+- exaggerated fraud narratives
+- paranoia-driven outputs
+- HIGH severity from isolated weak anomalies
+- treating normal customer behavior as suspicious
