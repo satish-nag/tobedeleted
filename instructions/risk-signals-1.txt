@@ -1,0 +1,150 @@
+RISK WEIGHTING AND MATERIALITY RULES:
+
+Fraud signals must be evaluated using:
+- recency
+- correlation strength
+- behavioral abnormality
+- transaction materiality
+- reinforcing evidence
+- customer context
+
+Do NOT treat all signals equally.
+
+--------------------------------------------------
+
+SIGNAL STRENGTH PRINCIPLES:
+
+1. Weak standalone signals should remain LOW severity.
+
+Examples:
+- old profile changes
+- low-dollar payments
+- known device usage
+- same IP/location
+- isolated rule triggers
+- single failed login
+- established payee usage
+
+These do NOT independently indicate fraud.
+
+--------------------------------------------------
+
+2. Multiple weak signals may become MEDIUM/HIGH only when strongly correlated.
+
+Examples:
+- profile update + new device + rapid payment
+- failed login + password reset + payee add
+- geo mismatch + shared device + instant payment
+
+--------------------------------------------------
+
+3. Transaction amount/materiality affects severity.
+
+Small-dollar transactions:
+- may indicate testing/probing behavior
+- should usually remain LOW or MEDIUM severity
+- unless reinforced by multiple strong anomalies
+
+High-dollar or unusual transactions:
+- increase severity significantly
+- especially with profile/device/payee anomalies
+
+Examples:
+- $10 after profile change -> LOW/MEDIUM
+- $5000 instant payment after profile change from new device -> HIGH
+
+--------------------------------------------------
+
+4. Known/trusted behavior reduces severity.
+
+Reduce severity when:
+- device is historically known
+- IP/location matches customer profile
+- payee is established
+- no prior fraud exists
+- no authentication anomalies exist
+- customer behavior matches historical patterns
+
+--------------------------------------------------
+
+5. Recency matters.
+
+Recent suspicious behavior:
+- increases severity
+
+Old historical behavior:
+- should not increase severity alone
+
+--------------------------------------------------
+
+6. Sequence compression increases severity.
+
+Examples:
+- login -> payee add -> transfer within minutes
+- multiple TWIs in seconds/minutes
+- rapid retries/rejections
+
+--------------------------------------------------
+
+7. Real-time or irreversible payment methods increase severity.
+
+Examples:
+- instant payment
+- real-time transfer
+- prepaid movement
+- card-to-card transfer
+
+Especially when combined with:
+- new payee
+- profile changes
+- risky device
+- geo mismatch
+
+--------------------------------------------------
+
+8. Prior confirmed fraud increases severity only when behavior is behaviorally related.
+
+Do NOT automatically elevate severity solely because prior fraud exists.
+
+--------------------------------------------------
+
+9. Generate HIGH severity only when:
+- multiple strong indicators correlate
+OR
+- severe behavioral anomaly exists
+
+--------------------------------------------------
+
+10. Avoid exaggerated fraud narratives.
+
+Do NOT:
+- overstate weak signals
+- assume account takeover without sufficient evidence
+- generate HIGH severity from isolated anomalies
+- describe normal behavior as suspicious
+
+--------------------------------------------------
+
+SEVERITY GUIDELINES:
+
+HIGH:
+- strong multi-signal correlation
+- rapid suspicious sequence
+- high materiality
+- risky device/IP behavior
+- account takeover patterns
+- mule behavior indicators
+- real-time movement with reinforcing anomalies
+
+MEDIUM:
+- moderate anomaly
+- partial suspicious sequence
+- moderate materiality
+- suspicious but incomplete evidence
+
+LOW:
+- weak anomaly
+- informational pattern
+- low materiality
+- limited supporting evidence
+- insufficient correlation
